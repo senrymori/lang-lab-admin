@@ -44,7 +44,24 @@ export interface Learner {
   last_seen_at: string | null
   spent_today_usd: number
   spent_30d_usd: number
+  spent_total_usd: number
+  blocked_reason: string
+  blocked_at: string | null
   live: string | null
+}
+
+export interface SpendAlert {
+  id: number
+  learner_id: string
+  name: string
+  email: string
+  sid: string
+  lang: string
+  usd_by_window: Record<string, number>
+  session_usd: number
+  verdict: 'spam' | 'ok' | 'error'
+  reason: string
+  created_at: string
 }
 
 export interface Code {
@@ -84,4 +101,5 @@ export const api = {
   newCode: (c: NewCode) => call<Code>('POST', '/codes', c),
   setCodeActive: (code: string, active: boolean) => call<Code>('PATCH', `/codes/${code}`, { active }),
   spend: (days = 30) => call<SpendDay[]>('GET', `/spend?days=${days}`),
+  alerts: () => call<SpendAlert[]>('GET', '/alerts'),
 }

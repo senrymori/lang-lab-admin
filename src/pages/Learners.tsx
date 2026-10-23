@@ -40,6 +40,7 @@ export function Learners({ onAuthError }: { onAuthError: () => void }) {
               <th>Был</th>
               <th className="num">Сегодня</th>
               <th className="num">30 дней</th>
+              <th className="num">Всего</th>
               <th />
             </tr>
           </thead>
@@ -54,7 +55,12 @@ export function Learners({ onAuthError }: { onAuthError: () => void }) {
                     <div className="muted small">{l.email}</div>
                   </td>
                   <td>
-                    {l.status === 'blocked' ? <span className="pill bad">заблокирован</span> : (
+                    {l.status === 'blocked' ? (
+                      <>
+                        <span className="pill bad">заблокирован</span>
+                        {l.blocked_reason && <div className="small muted">{l.blocked_reason}{l.blocked_at && `, ${fmtDateTime(l.blocked_at)}`}</div>}
+                      </>
+                    ) : (
                       <>
                         <div>{l.lessons_used} из {l.lessons_total}</div>
                         <div className={`small ${leftN > 0 ? 'muted' : 'error'}`}>{leftN > 0 ? `осталось ${leftN}` : 'уроки закончились'}</div>
@@ -64,6 +70,7 @@ export function Learners({ onAuthError }: { onAuthError: () => void }) {
                   <td className="small">{fmtDateTime(l.last_seen_at)}</td>
                   <td className="num">{usd(l.spent_today_usd)}</td>
                   <td className="num">{usd(l.spent_30d_usd)}</td>
+                  <td className="num">{usd(l.spent_total_usd)}</td>
                   <td className="actions">
                     <input className="count" type="number" min={1} max={1000} value={add} aria-label="Сколько уроков добавить"
                       onChange={(e) => setAdding((a) => ({ ...a, [l.id]: +e.target.value }))} />
