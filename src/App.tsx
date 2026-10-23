@@ -67,7 +67,6 @@ function SignIn({ onDone }: { onDone: () => void }) {
   return (
     <form className="card signin" onSubmit={submit}>
       <h1>Language Lab — админка</h1>
-      <p className="muted">Ключ админки лежит на сервере в /etc/langlab/keys/admin.key</p>
       <input type="password" autoFocus placeholder="Ключ" value={key} onChange={(e) => setValue(e.target.value)} />
       {error && <p className="error">{error}</p>}
       <button disabled={!key.trim()}>Войти</button>
