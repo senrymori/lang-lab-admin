@@ -87,3 +87,11 @@ tr.dim td { opacity: 0.5; }
 .bar i { display: block; width: 100%; min-height: 2px; background: var(--accent); border-radius: 4px 4px 0 0; }
 .bar span { font-size: 10px; color: var(--muted); }
 input.count { width: 64px; padding: 5px 8px; margin-right: 6px; display: inline-block; }
+
+/* scrollbars: never the system grey */
+/* Chromium (the app, Electron) draws the ::-webkit ones below; the standard properties would override them there */
+@supports not selector(::-webkit-scrollbar) { * { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .16) transparent; } }
+::-webkit-scrollbar { width: 10px; height: 10px; background: transparent; }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .14); border-radius: 10px; border: 3px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background-color: rgba(90, 47, 240, .6); }
