@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -7,4 +8,6 @@ export default defineConfig({
   base: '/admin/',
   plugins: [react()],
   server: { proxy: { '/admin/api': 'http://127.0.0.1:8000' } },
+  // tests: a browser-like DOM, the API answered by the test (src/test/api.ts) — nothing reaches a server
+  test: { environment: 'jsdom', setupFiles: ['src/test/setup.ts'] },
 })
