@@ -28,7 +28,6 @@ export interface Overview {
   max_learners: number
   spent_today_usd: number
   spent_month_usd: number
-  daily_budget_usd: number
   live_lessons: number
 }
 

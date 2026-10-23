@@ -17,7 +17,7 @@ export function Overview({ onAuthError }: { onAuthError: () => void }) {
       <section className="stats">
         <Stat label="Ученики" value={`${active + blocked} из ${o.max_learners}`} note={blocked ? `заблокировано ${blocked}` : 'мест в бете'} />
         <Stat label="Сейчас на уроке" value={String(o.live_lessons)} />
-        <Stat label="Расход сегодня" value={usd(o.spent_today_usd)} note={`лимит ученика ${usd(o.daily_budget_usd)} в день`} />
+        <Stat label="Расход сегодня" value={usd(o.spent_today_usd)} />
         <Stat label="Расход за месяц" value={usd(o.spent_month_usd)} note="модели репетитора" />
       </section>
       <section className="card">
