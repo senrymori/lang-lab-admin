@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { type Learner, api } from '../api'
-import { fmtDate, fmtDateTime, left, usd } from '../format'
+import { fmtDateTime, usd } from '../format'
 import { useLoad } from '../useLoad'
 
 const MODE: Record<string, string> = { learn: 'урок', placement: 'определение уровня' }
@@ -8,6 +8,7 @@ const MODE: Record<string, string> = { learn: 'урок', placement: 'опред
 export function Learners({ onAuthError }: { onAuthError: () => void }) {
   const { data, error, reload } = useLoad(useCallback(() => api.learners(), []), onAuthError)
   const [busy, setBusy] = useState('')
+  const [adding, setAdding] = useState<Record<string, number>>({})
   const [failed, setFailed] = useState('')
 
   const change = async (l: Learner, c: Parameters<typeof api.changeLearner>[1], confirmText?: string) => {
@@ -35,7 +36,7 @@ export function Learners({ onAuthError }: { onAuthError: () => void }) {
           <thead>
             <tr>
               <th>Ученик</th>
-              <th>Доступ</th>
+              <th>Уроки</th>
               <th>Был</th>
               <th className="num">Сегодня</th>
               <th className="num">30 дней</th>
@@ -44,7 +45,8 @@ export function Learners({ onAuthError }: { onAuthError: () => void }) {
           </thead>
           <tbody>
             {data.map((l) => {
-              const until = left(l.access_until)
+              const leftN = l.lessons_total - l.lessons_used
+              const add = adding[l.id] ?? 12
               return (
                 <tr key={l.id} className={l.status === 'blocked' ? 'dim' : ''}>
                   <td>
@@ -54,8 +56,8 @@ export function Learners({ onAuthError }: { onAuthError: () => void }) {
                   <td>
                     {l.status === 'blocked' ? <span className="pill bad">заблокирован</span> : (
                       <>
-                        <div>{fmtDate(l.access_until)}</div>
-                        <div className={`small ${until.over ? 'error' : 'muted'}`}>{until.text}</div>
+                        <div>{l.lessons_used} из {l.lessons_total}</div>
+                        <div className={`small ${leftN > 0 ? 'muted' : 'error'}`}>{leftN > 0 ? `осталось ${leftN}` : 'уроки закончились'}</div>
                       </>
                     )}
                   </td>
@@ -63,7 +65,9 @@ export function Learners({ onAuthError }: { onAuthError: () => void }) {
                   <td className="num">{usd(l.spent_today_usd)}</td>
                   <td className="num">{usd(l.spent_30d_usd)}</td>
                   <td className="actions">
-                    <button className="ghost" disabled={busy === l.id} onClick={() => change(l, { extend_days: 30 })}>+30 дней</button>
+                    <input className="count" type="number" min={1} max={1000} value={add} aria-label="Сколько уроков добавить"
+                      onChange={(e) => setAdding((a) => ({ ...a, [l.id]: +e.target.value }))} />
+                    <button className="ghost" disabled={busy === l.id || add < 1} onClick={() => change(l, { add_lessons: add })}>Добавить уроки</button>
                     {l.status === 'active' ? (
                       <button className="ghost danger" disabled={busy === l.id}
                         onClick={() => change(l, { status: 'blocked' }, `Заблокировать ${l.name || l.email}? Его выкинет со всех устройств и остановит текущий урок.`)}>

@@ -3,7 +3,7 @@ import { type NewCode, api } from '../api'
 import { fmtDate } from '../format'
 import { useLoad } from '../useLoad'
 
-const EMPTY: NewCode = { note: '', days: 90, kind: 'invite', max_uses: 1, expires_in_days: 14 }
+const EMPTY: NewCode = { note: '', lessons: 12, days: null, kind: 'invite', max_uses: 1, expires_in_days: 14 }
 
 export function Codes({ onAuthError }: { onAuthError: () => void }) {
   const { data, error, reload } = useLoad(useCallback(() => api.codes(), []), onAuthError)
@@ -49,8 +49,13 @@ export function Codes({ onAuthError }: { onAuthError: () => void }) {
           </select>
         </label>
         <label>
-          Дней доступа
-          <input type="number" min={1} max={3650} required value={form.days} onChange={(e) => set('days', +e.target.value)} />
+          Уроков
+          <input type="number" min={1} max={1000} required value={form.lessons} onChange={(e) => set('lessons', +e.target.value)} />
+        </label>
+        <label>
+          Срок на уроки, дней
+          <input type="number" min={1} max={3650} placeholder="без срока" value={form.days ?? ''}
+            onChange={(e) => set('days', e.target.value ? +e.target.value : null)} />
         </label>
         {form.kind === 'promo' && (
           <label>
@@ -80,7 +85,7 @@ export function Codes({ onAuthError }: { onAuthError: () => void }) {
           <div className="table-wrap">
             <table>
               <thead>
-                <tr><th>Код</th><th>Для кого</th><th className="num">Дней</th><th className="num">Использован</th><th>Сгорает</th><th /></tr>
+                <tr><th>Код</th><th>Для кого</th><th className="num">Уроков</th><th className="num">Использован</th><th>Сгорает</th><th /></tr>
               </thead>
               <tbody>
                 {data.map((c) => {
@@ -89,7 +94,7 @@ export function Codes({ onAuthError }: { onAuthError: () => void }) {
                     <tr key={c.code} className={!c.active || spent ? 'dim' : ''}>
                       <td className="mono">{c.code} {c.kind === 'promo' && <span className="pill">промо</span>}</td>
                       <td>{c.note}</td>
-                      <td className="num">{c.days}</td>
+                      <td className="num">{c.lessons}{c.days ? <span className="muted small"> / {c.days} дн.</span> : null}</td>
                       <td className="num">{c.used} / {c.max_uses}</td>
                       <td className="small">{fmtDate(c.expires_at)}</td>
                       <td className="actions">

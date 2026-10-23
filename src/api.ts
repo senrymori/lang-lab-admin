@@ -38,6 +38,8 @@ export interface Learner {
   name: string
   status: 'active' | 'blocked'
   code: string | null
+  lessons_total: number
+  lessons_used: number
   access_until: string | null
   created_at: string
   last_seen_at: string | null
@@ -49,7 +51,8 @@ export interface Learner {
 export interface Code {
   code: string
   kind: 'invite' | 'promo'
-  days: number
+  lessons: number
+  days: number | null
   used: number
   max_uses: number
   note: string
@@ -60,7 +63,8 @@ export interface Code {
 
 export interface NewCode {
   note: string
-  days: number
+  lessons: number
+  days: number | null
   kind: 'invite' | 'promo'
   max_uses: number
   expires_in_days: number | null
@@ -75,7 +79,7 @@ export interface SpendDay {
 export const api = {
   overview: () => call<Overview>('GET', '/overview'),
   learners: () => call<Learner[]>('GET', '/learners'),
-  changeLearner: (id: string, change: { status?: Learner['status']; extend_days?: number; name?: string }) =>
+  changeLearner: (id: string, change: { status?: Learner['status']; add_lessons?: number; name?: string }) =>
     call<Learner>('PATCH', `/learners/${id}`, change),
   codes: () => call<Code[]>('GET', '/codes'),
   newCode: (c: NewCode) => call<Code>('POST', '/codes', c),
