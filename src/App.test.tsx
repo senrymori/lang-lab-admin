@@ -66,17 +66,32 @@ describe('learners', () => {
 })
 
 describe('codes', () => {
-  it('a new invite: lessons, no time limit, copied', async () => {
+  it('a new invite: the name the tutor will use, lessons, no time limit, copied', async () => {
     localStorage.setItem('langlab-admin-key', 'k')
     location.hash = '#codes'
-    const made = { code: 'LAB-NEW1-CODE', kind: 'invite', lessons: 12, days: null, used: 0, max_uses: 1, note: 'Боря',
-      expires_at: null, active: true, created_at: '2026-10-23T10:00:00Z' }
+    const made = { code: 'LAB-NEW1-CODE', kind: 'invite', name: 'Боря', email: null, sent: false, lessons: 12, days: null,
+      used: 0, max_uses: 1, note: '', expires_at: null, active: true, created_at: '2026-10-23T10:00:00Z' }
     const calls = serve({ 'GET /codes': [], 'POST /codes': made })
     render(<App />)
-    await userEvent.type(await screen.findByPlaceholderText('Аня, коллега'), 'Боря')
+    await userEvent.type(await screen.findByPlaceholderText('Аня'), 'Боря')
     await userEvent.click(screen.getByRole('button', { name: 'Создать' }))
     expect(await screen.findByText('LAB-NEW1-CODE')).toBeInTheDocument()
     expect(calls.find((c) => c.method === 'POST')?.body).toEqual(
-      { note: 'Боря', lessons: 12, days: null, kind: 'invite', max_uses: 1, expires_in_days: 14 })
+      { name: 'Боря', email: '', note: '', lessons: 12, days: null, kind: 'invite', max_uses: 1, expires_in_days: 14 })
+  })
+
+  it('an invite with an address goes out by mail and can be sent again', async () => {
+    localStorage.setItem('langlab-admin-key', 'k')
+    location.hash = '#codes'
+    const made = { code: 'LAB-MAIL-CODE', kind: 'invite', name: 'Вера', email: 'vera@example.com', sent: true, lessons: 12,
+      days: null, used: 0, max_uses: 1, note: '', expires_at: null, active: true, created_at: '2026-10-23T10:00:00Z' }
+    const calls = serve({ 'GET /codes': [made], 'POST /codes': made, 'POST /codes/LAB-MAIL-CODE/send': made })
+    render(<App />)
+    await userEvent.type(await screen.findByPlaceholderText('Аня'), 'Вера')
+    await userEvent.type(screen.getByPlaceholderText('без почты — просто код'), 'vera@example.com')
+    await userEvent.click(screen.getByRole('button', { name: 'Создать и отправить' }))
+    expect(await screen.findByText('vera@example.com', { selector: 'b' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Отправить ещё раз' }))
+    await waitFor(() => expect(calls.some((c) => c.method === 'POST' && c.path === '/codes/LAB-MAIL-CODE/send')).toBe(true))
   })
 })

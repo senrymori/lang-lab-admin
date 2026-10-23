@@ -67,6 +67,9 @@ export interface SpendAlert {
 export interface Code {
   code: string
   kind: 'invite' | 'promo'
+  name: string
+  email: string | null
+  sent: boolean
   lessons: number
   days: number | null
   used: number
@@ -79,6 +82,8 @@ export interface Code {
 
 export interface NewCode {
   note: string
+  name: string
+  email: string
   lessons: number
   days: number | null
   kind: 'invite' | 'promo'
@@ -100,6 +105,7 @@ export const api = {
   codes: () => call<Code[]>('GET', '/codes'),
   newCode: (c: NewCode) => call<Code>('POST', '/codes', c),
   setCodeActive: (code: string, active: boolean) => call<Code>('PATCH', `/codes/${code}`, { active }),
+  sendInvite: (code: string) => call<Code>('POST', `/codes/${code}/send`),
   spend: (days = 30) => call<SpendDay[]>('GET', `/spend?days=${days}`),
   alerts: () => call<SpendAlert[]>('GET', '/alerts'),
 }

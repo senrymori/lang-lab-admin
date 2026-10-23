@@ -3,19 +3,21 @@ import { type NewCode, api } from '../api'
 import { fmtDate } from '../format'
 import { useLoad } from '../useLoad'
 
-const EMPTY: NewCode = { note: '', lessons: 12, days: null, kind: 'invite', max_uses: 1, expires_in_days: 14 }
+const EMPTY: NewCode = { name: '', email: '', note: '', lessons: 12, days: null, kind: 'invite', max_uses: 1, expires_in_days: 14 }
 
 export function Codes({ onAuthError }: { onAuthError: () => void }) {
   const { data, error, reload } = useLoad(useCallback(() => api.codes(), []), onAuthError)
   const [form, setForm] = useState<NewCode>(EMPTY)
-  const [made, setMade] = useState('')
+  const [made, setMade] = useState<{ code: string; email: string | null } | null>(null)
   const [failed, setFailed] = useState('')
 
   const create = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const c = await api.newCode({ ...form, max_uses: form.kind === 'invite' ? 1 : form.max_uses })
-      setMade(c.code)
+      const invite = form.kind === 'invite'
+      const c = await api.newCode({ ...form, max_uses: invite ? 1 : form.max_uses, name: invite ? form.name : '',
+        email: invite ? form.email.trim() : '' })
+      setMade({ code: c.code, email: c.sent ? c.email : null })
       setForm(EMPTY)
       setFailed('')
       await reload()
@@ -31,16 +33,44 @@ export function Codes({ onAuthError }: { onAuthError: () => void }) {
       setFailed(String(err instanceof Error ? err.message : err))
     }
   }
+  const resend = async (code: string) => {
+    try {
+      const c = await api.sendInvite(code)
+      setMade({ code: c.code, email: c.email })
+      setFailed('')
+      await reload()
+    } catch (err) {
+      setFailed(String(err instanceof Error ? err.message : err))
+    }
+  }
   const set = <K extends keyof NewCode>(k: K, v: NewCode[K]) => setForm((f) => ({ ...f, [k]: v }))
 
   return (
     <>
       <form className="card new-code" onSubmit={create}>
         <h2>Новый код</h2>
-        <label className="wide">
-          Для кого / где опубликован
-          <input required maxLength={200} value={form.note} onChange={(e) => set('note', e.target.value)} placeholder="Аня, коллега" />
-        </label>
+        {form.kind === 'invite' ? (
+          <>
+            <label>
+              Как репетитору обращаться
+              <input required maxLength={80} value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Аня" />
+            </label>
+            <label>
+              Почта — пришлём приглашение со ссылкой
+              <input type="email" maxLength={320} value={form.email} onChange={(e) => set('email', e.target.value)}
+                placeholder="без почты — просто код" />
+            </label>
+            <label className="wide">
+              Заметка для себя
+              <input maxLength={200} value={form.note} onChange={(e) => set('note', e.target.value)} placeholder="коллега, B1, хочет говорить" />
+            </label>
+          </>
+        ) : (
+          <label className="wide">
+            Где опубликован
+            <input required maxLength={200} value={form.note} onChange={(e) => set('note', e.target.value)} placeholder="телеграм-канал" />
+          </label>
+        )}
         <label>
           Вид
           <select value={form.kind} onChange={(e) => set('kind', e.target.value as NewCode['kind'])}>
@@ -68,10 +98,12 @@ export function Codes({ onAuthError }: { onAuthError: () => void }) {
           <input type="number" min={1} max={365} placeholder="никогда" value={form.expires_in_days ?? ''}
             onChange={(e) => set('expires_in_days', e.target.value ? +e.target.value : null)} />
         </label>
-        <button>Создать</button>
+        <button>{form.kind === 'invite' && form.email.trim() ? 'Создать и отправить' : 'Создать'}</button>
         {made && (
           <p className="made">
-            Код: <b>{made}</b> <button type="button" className="ghost" onClick={() => navigator.clipboard.writeText(made)}>Скопировать</button>
+            {made.email ? <>Приглашение ушло на <b>{made.email}</b>. </> : null}
+            Код: <b>{made.code}</b>{' '}
+            <button type="button" className="ghost" onClick={() => navigator.clipboard.writeText(made.code)}>Скопировать</button>
           </p>
         )}
         {failed && <p className="error">{failed}</p>}
@@ -85,7 +117,7 @@ export function Codes({ onAuthError }: { onAuthError: () => void }) {
           <div className="table-wrap">
             <table>
               <thead>
-                <tr><th>Код</th><th>Для кого</th><th className="num">Уроков</th><th className="num">Использован</th><th>Сгорает</th><th /></tr>
+                <tr><th>Код</th><th>Кому</th><th className="num">Уроков</th><th className="num">Использован</th><th>Сгорает</th><th /></tr>
               </thead>
               <tbody>
                 {data.map((c) => {
@@ -93,11 +125,18 @@ export function Codes({ onAuthError }: { onAuthError: () => void }) {
                   return (
                     <tr key={c.code} className={!c.active || spent ? 'dim' : ''}>
                       <td className="mono">{c.code} {c.kind === 'promo' && <span className="pill">промо</span>}</td>
-                      <td>{c.note}</td>
+                      <td>
+                        {c.name || c.note}
+                        {c.email && <div className="muted small">{c.email}{c.sent ? ' · приглашение отправлено' : ''}</div>}
+                        {c.name && c.note && <div className="muted small">{c.note}</div>}
+                      </td>
                       <td className="num">{c.lessons}{c.days ? <span className="muted small"> / {c.days} дн.</span> : null}</td>
                       <td className="num">{c.used} / {c.max_uses}</td>
                       <td className="small">{fmtDate(c.expires_at)}</td>
                       <td className="actions">
+                        {!spent && c.active && c.email && (
+                          <button className="ghost" onClick={() => resend(c.code)}>Отправить ещё раз</button>
+                        )}
                         {!spent && (
                           <button className="ghost" onClick={() => toggle(c.code, !c.active)}>{c.active ? 'Отключить' : 'Включить'}</button>
                         )}
