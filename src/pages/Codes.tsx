@@ -1,0 +1,110 @@
+import { useCallback, useState } from 'react'
+import { type NewCode, api } from '../api'
+import { fmtDate } from '../format'
+import { useLoad } from '../useLoad'
+
+const EMPTY: NewCode = { note: '', days: 90, kind: 'invite', max_uses: 1, expires_in_days: 14 }
+
+export function Codes({ onAuthError }: { onAuthError: () => void }) {
+  const { data, error, reload } = useLoad(useCallback(() => api.codes(), []), onAuthError)
+  const [form, setForm] = useState<NewCode>(EMPTY)
+  const [made, setMade] = useState('')
+  const [failed, setFailed] = useState('')
+
+  const create = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const c = await api.newCode({ ...form, max_uses: form.kind === 'invite' ? 1 : form.max_uses })
+      setMade(c.code)
+      setForm(EMPTY)
+      setFailed('')
+      await reload()
+    } catch (err) {
+      setFailed(String(err instanceof Error ? err.message : err))
+    }
+  }
+  const toggle = async (code: string, active: boolean) => {
+    try {
+      await api.setCodeActive(code, active)
+      await reload()
+    } catch (err) {
+      setFailed(String(err instanceof Error ? err.message : err))
+    }
+  }
+  const set = <K extends keyof NewCode>(k: K, v: NewCode[K]) => setForm((f) => ({ ...f, [k]: v }))
+
+  return (
+    <>
+      <form className="card new-code" onSubmit={create}>
+        <h2>Новый код</h2>
+        <label className="wide">
+          Для кого / где опубликован
+          <input required maxLength={200} value={form.note} onChange={(e) => set('note', e.target.value)} placeholder="Аня, коллега" />
+        </label>
+        <label>
+          Вид
+          <select value={form.kind} onChange={(e) => set('kind', e.target.value as NewCode['kind'])}>
+            <option value="invite">личный (1 человек)</option>
+            <option value="promo">промо (много)</option>
+          </select>
+        </label>
+        <label>
+          Дней доступа
+          <input type="number" min={1} max={3650} required value={form.days} onChange={(e) => set('days', +e.target.value)} />
+        </label>
+        {form.kind === 'promo' && (
+          <label>
+            Сколько раз
+            <input type="number" min={1} required value={form.max_uses} onChange={(e) => set('max_uses', +e.target.value)} />
+          </label>
+        )}
+        <label>
+          Сгорает через, дней
+          <input type="number" min={1} max={365} placeholder="никогда" value={form.expires_in_days ?? ''}
+            onChange={(e) => set('expires_in_days', e.target.value ? +e.target.value : null)} />
+        </label>
+        <button>Создать</button>
+        {made && (
+          <p className="made">
+            Код: <b>{made}</b> <button type="button" className="ghost" onClick={() => navigator.clipboard.writeText(made)}>Скопировать</button>
+          </p>
+        )}
+        {failed && <p className="error">{failed}</p>}
+      </form>
+
+      <section className="card">
+        <h2>Все коды</h2>
+        {error && <p className="error">{error}</p>}
+        {data && data.length === 0 && <p className="muted">Кодов пока нет.</p>}
+        {data && data.length > 0 && (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Код</th><th>Для кого</th><th className="num">Дней</th><th className="num">Использован</th><th>Сгорает</th><th /></tr>
+              </thead>
+              <tbody>
+                {data.map((c) => {
+                  const spent = c.used >= c.max_uses
+                  return (
+                    <tr key={c.code} className={!c.active || spent ? 'dim' : ''}>
+                      <td className="mono">{c.code} {c.kind === 'promo' && <span className="pill">промо</span>}</td>
+                      <td>{c.note}</td>
+                      <td className="num">{c.days}</td>
+                      <td className="num">{c.used} / {c.max_uses}</td>
+                      <td className="small">{fmtDate(c.expires_at)}</td>
+                      <td className="actions">
+                        {!spent && (
+                          <button className="ghost" onClick={() => toggle(c.code, !c.active)}>{c.active ? 'Отключить' : 'Включить'}</button>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </>
+  )
+}

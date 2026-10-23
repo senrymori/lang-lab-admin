@@ -1,0 +1,84 @@
+// The backend's admin API (lang-lab-backend/app/admin.py). The key is typed once and kept in this browser.
+const KEY = 'langlab-admin-key'
+
+export const getKey = () => localStorage.getItem(KEY) ?? ''
+export const setKey = (k: string) => (k ? localStorage.setItem(KEY, k) : localStorage.removeItem(KEY))
+
+export class ApiError extends Error {
+  constructor(public status: number, message: string) {
+    super(message)
+  }
+}
+
+async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const r = await fetch(`/admin/api${path}`, {
+    method,
+    headers: { Authorization: `Bearer ${getKey()}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+    body: body ? JSON.stringify(body) : undefined,
+  })
+  if (!r.ok) {
+    const detail = await r.json().then((j) => j.detail, () => r.statusText)
+    throw new ApiError(r.status, typeof detail === 'string' ? detail : JSON.stringify(detail))
+  }
+  return r.json()
+}
+
+export interface Overview {
+  learners: Record<string, number>
+  max_learners: number
+  spent_today_usd: number
+  spent_month_usd: number
+  daily_budget_usd: number
+  live_lessons: number
+}
+
+export interface Learner {
+  id: string
+  email: string
+  name: string
+  status: 'active' | 'blocked'
+  code: string | null
+  access_until: string | null
+  created_at: string
+  last_seen_at: string | null
+  spent_today_usd: number
+  spent_30d_usd: number
+  live: string | null
+}
+
+export interface Code {
+  code: string
+  kind: 'invite' | 'promo'
+  days: number
+  used: number
+  max_uses: number
+  note: string
+  expires_at: string | null
+  active: boolean
+  created_at: string
+}
+
+export interface NewCode {
+  note: string
+  days: number
+  kind: 'invite' | 'promo'
+  max_uses: number
+  expires_in_days: number | null
+}
+
+export interface SpendDay {
+  day: string
+  usd: number
+  calls: number
+}
+
+export const api = {
+  overview: () => call<Overview>('GET', '/overview'),
+  learners: () => call<Learner[]>('GET', '/learners'),
+  changeLearner: (id: string, change: { status?: Learner['status']; extend_days?: number; name?: string }) =>
+    call<Learner>('PATCH', `/learners/${id}`, change),
+  codes: () => call<Code[]>('GET', '/codes'),
+  newCode: (c: NewCode) => call<Code>('POST', '/codes', c),
+  setCodeActive: (code: string, active: boolean) => call<Code>('PATCH', `/codes/${code}`, { active }),
+  spend: (days = 30) => call<SpendDay[]>('GET', `/spend?days=${days}`),
+}
