@@ -6,7 +6,7 @@ import { useLoad } from '../useLoad'
 
 const MODE: Record<string, string> = { learn: 'урок', placement: 'определение уровня' }
 const VERDICT: Record<string, string> = { spam: 'Спам — заблокирован', flag: 'Красный флаг — не заблокирован', ok: 'Похоже на урок',
-  error: 'Не проверено', care: 'Возможно, человеку плохо — не заблокирован' }
+  error: 'Не проверено', care: 'Возможно, человеку плохо — не заблокирован', watch: 'Непонятная активность — не флаг' }
 // what the learner wrote or said, flagged by moderation: the same verdicts, read for a message
 const VERDICT_MSG: Record<string, string> = { ...VERDICT, spam: 'Заблокирован — повторялось' }
 const WEEK = 7 * 24 * 3600 * 1000
@@ -106,13 +106,15 @@ export function Overview({ onAuthError }: { onAuthError: () => void }) {
                           <td>Частые запросы<div className="sub">распознавание речи</div></td>
                         ) : a.sid === 'moderation' ? (  // what they wrote or said: the words are in the reason
                           <td>Модерация<div className="sub">сообщение ученика</div></td>
+                        ) : a.sid === 'drift' ? (  // a cheap model read the lesson every few messages of the learner's own
+                          <td>Уход от урока<div className="sub">проверка урока</div></td>
                         ) : (
                           <td>
                             {Object.entries(a.usd_by_window).map(([m, v]) => `${usd(v)} за ${m} мин`).join(', ')}
                             <div className="sub">урок всего {usd(a.session_usd)}</div>
                           </td>
                         )}
-                        <td><div className="name">{(a.sid === 'moderation' ? VERDICT_MSG : VERDICT)[a.verdict] ?? a.verdict}</div>{a.reason && <div className="sub">{a.reason}</div>}</td>
+                        <td><div className="name">{(a.sid === 'moderation' || a.sid === 'drift' ? VERDICT_MSG : VERDICT)[a.verdict] ?? a.verdict}</div>{a.reason && <div className="sub">{a.reason}</div>}</td>
                       </tr>
                     ))}
                   </tbody>

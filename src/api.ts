@@ -60,7 +60,7 @@ export interface SpendAlert {
   lang: string
   usd_by_window: Record<string, number>
   session_usd: number
-  verdict: 'spam' | 'flag' | 'ok' | 'error' | 'care'
+  verdict: 'spam' | 'flag' | 'ok' | 'error' | 'care' | 'watch'
   reason: string
   created_at: string
 }
