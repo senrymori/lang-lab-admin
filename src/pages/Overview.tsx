@@ -5,7 +5,7 @@ import { fmtDate, fmtDateTime, fmtDayFull, plural, usd } from '../format'
 import { useLoad } from '../useLoad'
 
 const MODE: Record<string, string> = { learn: 'урок', placement: 'определение уровня' }
-const VERDICT = { spam: 'Спам — заблокирован', ok: 'Похоже на урок', error: 'Не проверено' }
+const VERDICT = { spam: 'Спам — заблокирован', flag: 'Красный флаг — не заблокирован', ok: 'Похоже на урок', error: 'Не проверено' }
 const WEEK = 7 * 24 * 3600 * 1000
 
 export function Overview({ onAuthError }: { onAuthError: () => void }) {
@@ -99,10 +99,14 @@ export function Overview({ onAuthError }: { onAuthError: () => void }) {
                       <tr key={a.id}>
                         <td style={{ color: 'var(--ink-soft)', whiteSpace: 'nowrap' }}>{fmtDateTime(a.created_at)}</td>
                         <td><div className="name">{a.name || '—'}</div><div className="sub">{a.email}</div></td>
-                        <td>
-                          {Object.entries(a.usd_by_window).map(([m, v]) => `${usd(v)} за ${m} мин`).join(', ')}
-                          <div className="sub">урок всего {usd(a.session_usd)}</div>
-                        </td>
+                        {a.sid === 'burst' ? (  // speech asked for faster than a person speaks: no spend window, a pace
+                          <td>Частые запросы<div className="sub">распознавание речи</div></td>
+                        ) : (
+                          <td>
+                            {Object.entries(a.usd_by_window).map(([m, v]) => `${usd(v)} за ${m} мин`).join(', ')}
+                            <div className="sub">урок всего {usd(a.session_usd)}</div>
+                          </td>
+                        )}
                         <td><div className="name">{VERDICT[a.verdict]}</div>{a.reason && <div className="sub">{a.reason}</div>}</td>
                       </tr>
                     ))}
