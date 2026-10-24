@@ -25,4 +25,4 @@ export const learner = (over = {}) => ({
 })
 
 export const overview = { learners: { active: 2, blocked: 1 }, max_learners: 10, spent_today_usd: 1.25,
-  spent_month_usd: 14, live_lessons: 1 }
+  spent_month_usd: 14, live_lessons: 1, requests: 0 }

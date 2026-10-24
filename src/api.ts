@@ -29,6 +29,7 @@ export interface Overview {
   spent_today_usd: number
   spent_month_usd: number
   live_lessons: number
+  requests: number
 }
 
 export interface Learner {
@@ -89,6 +90,14 @@ export interface NewCode {
   kind: 'invite' | 'promo'
   max_uses: number
   expires_in_days: number | null
+  request?: number
+}
+
+export interface AccessRequest {
+  id: number
+  name: string
+  email: string
+  created_at: string
 }
 
 export interface SpendDay {
@@ -106,6 +115,8 @@ export const api = {
   newCode: (c: NewCode) => call<Code>('POST', '/codes', c),
   setCodeActive: (code: string, active: boolean) => call<Code>('PATCH', `/codes/${code}`, { active }),
   sendInvite: (code: string) => call<Code>('POST', `/codes/${code}/send`),
+  requests: () => call<AccessRequest[]>('GET', '/requests'),
+  dismissRequest: (id: number) => call<{ ok: true }>('DELETE', `/requests/${id}`),
   spend: (days = 30) => call<SpendDay[]>('GET', `/spend?days=${days}`),
   alerts: () => call<SpendAlert[]>('GET', '/alerts'),
 }
