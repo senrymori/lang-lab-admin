@@ -176,4 +176,14 @@ export const api = {
   spendDetail: (f: SpendFilter = {}) => call<SpendDetail>('GET', `/spend/detail?${query({ days: 30, ...f })}`),
   alerts: () => call<SpendAlert[]>('GET', '/alerts'),
   feedback: () => call<FeedbackRow[]>('GET', '/feedback'),
+  setups: () => call<Setups>('GET', '/setups'),
+}
+
+/** How learners set lessons up before they start (lp/setup.py): the counts, and their own words. */
+export interface Setups {
+  total: number
+  how: Record<'custom' | 'lemur' | 'last', number>
+  focus: { key: string; title: string; n: number }[]
+  topics: { key: string; title: string; n: number }[]
+  own: { learner_id: string; name: string; email: string; lang: string; ts: string; what: string; text: string; topic: string }[]
 }

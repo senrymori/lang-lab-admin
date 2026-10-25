@@ -241,3 +241,17 @@ describe('feedback', () => {
     expect(screen.getByText('быстро', { exact: false })).toBeInTheDocument()
   })
 })
+
+describe('setups', () => {
+  it('counts how lessons start and what is chosen, and lists their own words', async () => {
+    localStorage.setItem('langlab-admin-key', 'k')
+    location.hash = '#setups'
+    serve({ 'GET /setups': { total: 4, how: { custom: 2, lemur: 1, last: 1 },
+      focus: [{ key: 'grammar', title: 'Грамматика', n: 1 }], topics: [{ key: 'games', title: 'Игры', n: 1 }],
+      own: [{ learner_id: 'u1', name: 'Тимур', email: 't@example.com', lang: 'en', ts: '2026-10-25T10:00:00Z', what: 'Конкретно', text: 'Dota 2', topic: 'Игры' }] } })
+    render(<App />)
+    expect(await screen.findByText('4 урока с настройкой')).toBeInTheDocument()
+    expect(screen.getByText('На усмотрение лемура')).toBeInTheDocument()
+    expect(screen.getByText('Dota 2')).toBeInTheDocument()
+  })
+})

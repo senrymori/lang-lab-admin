@@ -314,3 +314,8 @@ button:disabled { opacity: .45; cursor: default; }
 .fb-items li:first-child { border-top: 0; padding-top: 0; }
 .fb-items p { margin: 0; }
 .fb-head { display: flex; align-items: baseline; gap: 14px; }
+
+/* «Настройки уроков»: a count's share as a quiet bar */
+.counts td { vertical-align: middle; }
+.share { height: 8px; background: var(--line); border-radius: 999px; overflow: hidden; }
+.share i { display: block; height: 100%; background: var(--fur-warm); border-radius: 999px; }
