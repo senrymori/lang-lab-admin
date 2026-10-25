@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { type Setups as SetupsData, api } from '../api'
 import { fmtDateTime, plural } from '../format'
 import { useLoad } from '../useLoad'
@@ -26,7 +26,8 @@ function Counts({ rows, of }: { rows: { key: string; title: string; n: number }[
 /** What learners choose before a lesson: how they start, what they want to work on and talk about, and what they
  * write in their own words — to see what the cards are missing. */
 export function Setups({ onAuthError }: { onAuthError: () => void }) {
-  const load = useCallback(() => api.setups(), [])
+  const [lang, setLang] = useState('')
+  const load = useCallback(() => api.setups(lang), [lang])
   const { data: d, error } = useLoad(load, onAuthError)
   const custom = d?.how.custom ?? 0
 
@@ -40,8 +41,14 @@ export function Setups({ onAuthError }: { onAuthError: () => void }) {
       </section>
       <section className="band body ll-grain" data-theme="light">
         <div className="wrap stack">
+          <div className="seg" role="tablist" aria-label="Язык">
+            {[['', 'Все языки'], ...Object.entries(LANG)].map(([k, t]) => (
+              <button key={k} type="button" role="tab" aria-selected={lang === k} className={lang === k ? 'on' : ''} onClick={() => setLang(k)}>{t}</button>
+            ))}
+          </div>
           {error && <p className="error">{error}</p>}
           {!d && !error && <p className="quiet">Загружаю…</p>}
+          {d && d.total === 0 && <p className="quiet">{lang ? 'На этом языке уроки ещё не настраивали.' : 'Уроки ещё не настраивали.'}</p>}
           {d && d.total > 0 && (
             <>
               <h2 className="h2">Как начинают урок</h2>

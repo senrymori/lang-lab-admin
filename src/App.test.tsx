@@ -257,3 +257,30 @@ describe('setups', () => {
     expect(screen.getAllByText('Бизнес').length).toBe(2)  // a learners' topic, and where their words went
   })
 })
+
+describe('languages', () => {
+  it('shows each language: learners, lessons, levels, rating and the tutor\'s cost', async () => {
+    localStorage.setItem('langlab-admin-key', 'k')
+    location.hash = '#languages'
+    serve({ 'GET /languages': [
+      { lang: 'en', name: 'English', learners: 3, lessons: 7, placements: 3, levels: { 'B1+': 1, A2: 2 }, rating: 4.25, usd_30d: 3.1, usd_total: 5.5 },
+      { lang: 'kk', name: 'Kazakh', learners: 0, lessons: 0, placements: 0, levels: {}, rating: null, usd_30d: 0, usd_total: 0 },
+    ] })
+    render(<App />)
+    expect(await screen.findByText('учат 1 язык из 2')).toBeInTheDocument()
+    expect(screen.getByText('A2 × 2 · B1+ × 1')).toBeInTheDocument()
+    expect(screen.getByText('4,3')).toBeInTheDocument()
+  })
+
+  it('the set-ups filter by language', async () => {
+    localStorage.setItem('langlab-admin-key', 'k')
+    location.hash = '#setups'
+    const empty = { total: 0, how: { custom: 0, lemur: 0, last: 0 }, focus: [], topics: [], pools: [], own: [] }
+    const calls = serve({ 'GET /setups': { ...empty, total: 1, how: { custom: 0, lemur: 1, last: 0 } }, 'GET /setups?lang=kk': empty })
+    render(<App />)
+    expect(await screen.findByText('1 урок с настройкой')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('tab', { name: 'Казахский' }))
+    expect(await screen.findByText('На этом языке уроки ещё не настраивали.')).toBeInTheDocument()
+    expect(calls.some((c) => c.path === '/setups?lang=kk')).toBe(true)
+  })
+})

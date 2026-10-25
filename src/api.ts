@@ -176,7 +176,8 @@ export const api = {
   spendDetail: (f: SpendFilter = {}) => call<SpendDetail>('GET', `/spend/detail?${query({ days: 30, ...f })}`),
   alerts: () => call<SpendAlert[]>('GET', '/alerts'),
   feedback: () => call<FeedbackRow[]>('GET', '/feedback'),
-  setups: () => call<Setups>('GET', '/setups'),
+  setups: (lang = '') => call<Setups>('GET', lang ? `/setups?lang=${lang}` : '/setups'),
+  languages: () => call<LanguageRow[]>('GET', '/languages'),
 }
 
 /** How learners set lessons up before they start (lp/setup.py): the counts, and their own words. */
@@ -188,4 +189,17 @@ export interface Setups {
   /** how many learners have each topic in their pool (the lemur links what they say to one topic) */
   pools: { key: string; title: string; n: number }[]
   own: { learner_id: string; name: string; email: string; lang: string; ts: string; what: string; text: string; topic: string }[]
+}
+
+/** A language at a glance: who took it up, lessons and placements, levels, the mean rating, the tutor's cost there. */
+export interface LanguageRow {
+  lang: string
+  name: string
+  learners: number
+  lessons: number
+  placements: number
+  levels: Record<string, number>
+  rating: number | null
+  usd_30d: number
+  usd_total: number
 }
