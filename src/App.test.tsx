@@ -204,3 +204,24 @@ describe('spend', () => {
     expect(screen.getByRole('link', { name: 'Подробнее →' })).toHaveAttribute('href', '#spend')
   })
 })
+
+describe('feedback', () => {
+  it('a row per learner and language; the mean opens every answer', async () => {
+    localStorage.setItem('langlab-admin-key', 'k')
+    location.hash = '#feedback'
+    serve({ 'GET /feedback': [{ learner_id: 'u1', name: 'Аня', email: 'a@example.com', lang: 'es', level: 'B1-', rating: 4,
+      items: [
+        { sid: 'l1', ts: '2026-10-24T10:00:00Z', mode: 'learn', rating: 5, liked: ['допрос свидетеля'], comment: 'Отлично' },
+        { sid: 'p1', ts: '2026-10-20T10:00:00Z', mode: 'placement', rating: 3, disliked: ['диктант'], why: 'быстро' },
+      ] }] })
+    render(<App />)
+    expect(await screen.findByText('Испанский')).toBeInTheDocument()
+    expect(screen.getByText('B1-')).toBeInTheDocument()
+    expect(screen.getByText('Отлично')).toBeInTheDocument()
+    expect(screen.queryByText('Определение уровня')).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: /4,0/ }))
+    expect(screen.getByText('Определение уровня')).toBeInTheDocument()
+    expect(screen.getByText('допрос свидетеля', { exact: false })).toBeInTheDocument()
+    expect(screen.getByText('быстро', { exact: false })).toBeInTheDocument()
+  })
+})

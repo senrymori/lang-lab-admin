@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react'
 import { ApiError, api, getKey, setKey } from './api'
 import lemur from './assets/lemur-headphones-upside-down.webp'
 import { Codes } from './pages/Codes'
+import { Feedback } from './pages/Feedback'
 import { Learners } from './pages/Learners'
 import { Overview } from './pages/Overview'
 import { Requests } from './pages/Requests'
 import { Spend } from './pages/Spend'
 import { Mark } from './ui'
 
-const TABS = { overview: 'Обзор', spend: 'Расходы', requests: 'Заявки', learners: 'Ученики', codes: 'Коды доступа' } as const
+const TABS = { overview: 'Обзор', spend: 'Расходы', requests: 'Заявки', learners: 'Ученики', feedback: 'Отзывы', codes: 'Коды доступа' } as const
 type Tab = keyof typeof TABS
 
 const tabFromHash = (): Tab => {
@@ -51,6 +52,7 @@ export function App() {
       {tab === 'spend' && <Spend onAuthError={signOut} />}
       {tab === 'requests' && <Requests onAuthError={signOut} />}
       {tab === 'learners' && <Learners onAuthError={signOut} />}
+      {tab === 'feedback' && <Feedback onAuthError={signOut} />}
       {tab === 'codes' && <Codes onAuthError={signOut} />}
     </div>
   )

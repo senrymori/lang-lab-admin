@@ -127,6 +127,26 @@ export interface SpendDay {
   by_service: Partial<Record<Service, number>>
 }
 
+// one learner in one language: their level there, the mean rating and every answer, newest first
+export interface FeedbackRow {
+  learner_id: string
+  name: string
+  email: string
+  lang: string
+  level: string | null
+  rating: number | null
+  items: {
+    sid: string
+    ts: string
+    mode: 'learn' | 'placement'
+    rating?: number
+    liked?: string[]
+    disliked?: string[]
+    why?: string
+    comment?: string
+  }[]
+}
+
 export interface SpendFilter { days?: number; learner?: string; service?: Service }
 const query = (f: SpendFilter) =>
   new URLSearchParams(Object.entries(f).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)])).toString()
@@ -145,4 +165,5 @@ export const api = {
   spend: (f: SpendFilter = {}) => call<SpendDay[]>('GET', `/spend?${query({ days: 30, ...f })}`),
   spendDetail: (f: SpendFilter = {}) => call<SpendDetail>('GET', `/spend/detail?${query({ days: 30, ...f })}`),
   alerts: () => call<SpendAlert[]>('GET', '/alerts'),
+  feedback: () => call<FeedbackRow[]>('GET', '/feedback'),
 }
