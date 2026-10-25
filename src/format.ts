@@ -28,3 +28,16 @@ export const plural = (n: number, [one, few, many]: [string, string, string]) =>
 }
 export const lessons = (n: number) => `${n} ${plural(n, ['урок', 'урока', 'уроков'])}`
 export const days = (n: number) => `${n} ${plural(n, ['день', 'дня', 'дней'])}`
+
+
+const DOING: Record<string, string> = { learn: 'сейчас на уроке', placement: 'определяет уровень' }
+const PAUSED: Record<string, string> = { learn: 'урок на паузе', placement: 'проверка уровня на паузе' }
+/** What a learner's lesson is doing now, for a line under their name; '' when none is going. */
+export function lessonNow(l: { live: string | null; presence: { state: string; why?: string; idle_min?: number } | null }): string {
+  if (!l.live || !l.presence) return ''
+  if (l.presence.state === 'live') return DOING[l.live] ?? 'на уроке'
+  const why = l.presence.why === 'app' ? 'приложение закрыто или Мак спит'
+    : l.presence.why === 'away' ? 'окно свёрнуто или открыта другая программа'
+      : `ничего не делает ${l.presence.idle_min ?? ''} мин`
+  return `${PAUSED[l.live] ?? 'на паузе'} — ${why}`
+}

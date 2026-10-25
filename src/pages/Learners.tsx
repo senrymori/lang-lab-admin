@@ -1,10 +1,8 @@
 import { Fragment, useCallback, useState } from 'react'
 import { type Learner, api } from '../api'
-import { fmtDate, fmtDateTime, lessons, plural, usd } from '../format'
+import { fmtDate, fmtDateTime, lessonNow, lessons, plural, usd } from '../format'
 import { Choice, More } from '../ui'
 import { useLoad } from '../useLoad'
-
-const MODE: Record<string, string> = { learn: 'сейчас на уроке', placement: 'определяет уровень' }
 
 type Open = { id: string; mode: 'add' | 'set' }
 
@@ -32,7 +30,8 @@ export function Learners({ onAuthError }: { onAuthError: () => void }) {
 
   const all = data?.[0]
   const max = data?.[1].max_learners
-  const liveN = all?.filter((l) => l.live).length ?? 0
+  const liveN = all?.filter((l) => l.presence?.state === 'live').length ?? 0
+  const pausedN = all?.filter((l) => l.presence?.state === 'paused').length ?? 0
   const head = (
     <section className="band ll-grain" data-theme="dark">
       <div className="wrap page-head">
@@ -41,6 +40,7 @@ export function Learners({ onAuthError }: { onAuthError: () => void }) {
           <div className="sub-line">
             <span>Занято {all.length} {plural(all.length, ['место', 'места', 'мест'])} из {max}</span>
             {liveN > 0 && <span className="live" style={{ fontSize: 16, lineHeight: '24px' }}><i className="dot" />{liveN} сейчас на уроке</span>}
+            {pausedN > 0 && <span className="live paused" style={{ fontSize: 16, lineHeight: '24px' }}><i className="dot" />{pausedN} на паузе</span>}
           </div>
         )}
       </div>
@@ -89,7 +89,7 @@ export function Learners({ onAuthError }: { onAuthError: () => void }) {
     </>
   )
   const spent = (l: Learner) => <td className="num">{usd(l.spent_30d_usd)}<div className="sub">всего {usd(l.spent_total_usd)}</div></td>
-  const seen = (l: Learner) => <td style={{ color: 'var(--ink-soft)', whiteSpace: 'nowrap' }}>{l.live ? 'сейчас' : fmtDateTime(l.last_seen_at)}</td>
+  const seen = (l: Learner) => <td style={{ color: 'var(--ink-soft)', whiteSpace: 'nowrap' }}>{l.presence?.state === 'live' ? 'сейчас' : fmtDateTime(l.last_seen_at)}</td>
   const until = (l: Learner) => {
     if (!l.access_until) return ''
     const d = new Date(l.access_until)
@@ -137,8 +137,8 @@ export function Learners({ onAuthError }: { onAuthError: () => void }) {
                 <tr key={l.id}>
                   <td>
                     {who(l)}
-                    {l.live && (
-                      <div className="live" style={{ marginTop: 6 }}><i className="dot" />{MODE[l.live] ?? 'на уроке'} · {usd(l.spent_today_usd)} сегодня</div>
+                    {lessonNow(l) && (
+                      <div className={`live${l.presence?.state === 'paused' ? ' paused' : ''}`} style={{ marginTop: 6 }}><i className="dot" />{lessonNow(l)} · {usd(l.spent_today_usd)} сегодня</div>
                     )}
                   </td>
                   <td>

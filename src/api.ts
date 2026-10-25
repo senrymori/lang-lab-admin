@@ -32,6 +32,7 @@ export interface Overview {
   spent_today_usd: number
   spent_month_usd: number
   live_lessons: number
+  paused_lessons: number
   requests: number
   services_month: Partial<Record<Service, number>>
   allowances: {
@@ -68,7 +69,16 @@ export interface Learner {
   spent_total_usd: number
   blocked_reason: string
   blocked_at: string | null
+  /** the mode of a lesson going (live or paused), null when none is */
   live: string | null
+  /** is the learner there: the app not connected, its window away, nothing from them for a while — a pause */
+  presence: Presence | null
+}
+
+export interface Presence {
+  state: 'live' | 'paused'
+  why?: 'app' | 'away' | 'idle'
+  idle_min?: number
 }
 
 export interface SpendAlert {

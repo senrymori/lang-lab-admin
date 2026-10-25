@@ -1,11 +1,10 @@
 import { useCallback } from 'react'
 import { type Overview as OverviewData, api } from '../api'
 import lemur from '../assets/lemur-magnifier.webp'
-import { fmtDateTime, fmtDayFull, plural, usd } from '../format'
+import { fmtDateTime, fmtDayFull, lessonNow, plural, usd } from '../format'
 import { ServiceLegend, SpendChart } from '../spend'
 import { useLoad } from '../useLoad'
 
-const MODE: Record<string, string> = { learn: 'урок', placement: 'определение уровня' }
 const VERDICT: Record<string, string> = { spam: 'Спам — заблокирован', flag: 'Красный флаг — не заблокирован', ok: 'Похоже на урок',
   error: 'Не проверено', care: 'Возможно, человеку плохо — не заблокирован', watch: 'Непонятная активность — не флаг' }
 // what the learner wrote or said, flagged by moderation: the same verdicts, read for a message
@@ -43,7 +42,7 @@ export function Overview({ onAuthError }: { onAuthError: () => void }) {
   const [o, spend, alerts, learners] = data
   const blocked = o.learners.blocked ?? 0
   const taken = Object.values(o.learners).reduce((a, n) => a + n, 0)
-  const live = learners.filter((l) => l.live)
+  const going = learners.filter((l) => l.presence)
   const lastWeek = alerts.filter((a) => today.getTime() - new Date(a.created_at).getTime() < WEEK).length
 
   return (
@@ -63,8 +62,9 @@ export function Overview({ onAuthError }: { onAuthError: () => void }) {
           <div className="stat">
             <span className="credit">Сейчас на уроке</span>
             <span className="value">{o.live_lessons} {o.live_lessons > 0 && <span className="dot" />}</span>
-            {live.length > 0 && (
-              <span className="note">{live.map((l) => `${l.name || l.email} — ${MODE[l.live!] ?? l.live}`).join(', ')}</span>
+            {o.paused_lessons > 0 && <span className="note">ещё на паузе: {o.paused_lessons}</span>}
+            {going.length > 0 && (
+              <span className="note">{going.map((l) => `${l.name || l.email} — ${lessonNow(l)}`).join('; ')}</span>
             )}
           </div>
           <div className="stat">

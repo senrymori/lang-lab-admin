@@ -90,6 +90,22 @@ describe('learners', () => {
     expect(await screen.findByText(/накрутка токенов/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Разблокировать' })).toBeInTheDocument()
   })
+
+  it('a lesson going tells a learner there from one who stepped away', async () => {
+    localStorage.setItem('langlab-admin-key', 'k')
+    location.hash = '#learners'
+    serve({ 'GET /learners': [
+      learner({ live: 'placement', presence: { state: 'live' } }),
+      learner({ id: 'u2', name: 'Гриша', email: 'g@example.com', live: 'placement', presence: { state: 'paused', why: 'app' } }),
+      learner({ id: 'u3', name: 'Алмаз', email: 'al@example.com', live: 'learn', presence: { state: 'paused', why: 'idle', idle_min: 12 } }),
+    ], 'GET /overview': overview })
+    render(<App />)
+    expect(await screen.findByText('1 сейчас на уроке')).toBeInTheDocument()
+    expect(screen.getByText('2 на паузе')).toBeInTheDocument()
+    expect(screen.getByText(/определяет уровень · /)).toBeInTheDocument()
+    expect(screen.getByText(/проверка уровня на паузе — приложение закрыто или Мак спит/)).toBeInTheDocument()
+    expect(screen.getByText(/урок на паузе — ничего не делает 12 мин/)).toBeInTheDocument()
+  })
 })
 
 describe('codes', () => {
