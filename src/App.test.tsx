@@ -190,3 +190,17 @@ describe('requests', () => {
     })
   })
 })
+
+describe('spend', () => {
+  it('the overview splits the month by service, shows the free allowances and the fixed costs', async () => {
+    serve({ 'GET /overview': overview, 'GET /spend?days=30': [], 'GET /alerts': [], 'GET /learners': [] })
+    localStorage.setItem('langlab-admin-key', 'k')
+    location.hash = '#overview'
+    render(<App />)
+    expect(await screen.findByText('Репетитор')).toBeInTheDocument()
+    expect(screen.getByText('$12.00')).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /^120.000 из 500.000$/ })).toBeInTheDocument()
+    expect(screen.getByText('сумма не указана')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Подробнее →' })).toHaveAttribute('href', '#spend')
+  })
+})

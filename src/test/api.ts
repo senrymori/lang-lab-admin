@@ -25,4 +25,7 @@ export const learner = (over = {}) => ({
 })
 
 export const overview = { learners: { active: 2, blocked: 1 }, max_learners: 10, spent_today_usd: 1.25,
-  spent_month_usd: 14, live_lessons: 1, requests: 0 }
+  spent_month_usd: 14, live_lessons: 1, requests: 0, services_month: { tutor: 12, speech: 2 },
+  allowances: { azure_chars_month: 120000, azure_chars_limit: 500000, letters_today: 3, letters_day_limit: 100,
+    letters_month: 40, letters_month_limit: 3000 },
+  fixed_costs: [{ name: 'VPS OVHcloud', usd_month: null, note: 'сервер' }, { name: 'Apple Developer Program', usd_month: 8.25 }] }

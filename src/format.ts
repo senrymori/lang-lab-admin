@@ -16,6 +16,8 @@ export const fmtDateTime = (s: string | null) => {
 export const fmtDayLong = (d: Date) => `${d.getDate()} ${LONG[d.getMonth()]}`
 export const fmtDayFull = (d: Date) => `${fmtDayLong(d)} ${d.getFullYear()}`
 export const usd = (n: number) => `$${n.toFixed(2)}`
+// a single day's line can be a fraction of a cent: shown, not rounded to $0.00
+export const usdFine = (n: number) => (n > 0 && n < 0.01 ? `$${n.toFixed(4)}` : usd(n))
 
 /** plural(5, ['урок', 'урока', 'уроков']) → 'уроков' */
 export const plural = (n: number, [one, few, many]: [string, string, string]) => {

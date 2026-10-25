@@ -23,6 +23,9 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
   return r.json()
 }
 
+// what the money went to (the server's Spend.service)
+export type Service = 'tutor' | 'helper' | 'checks' | 'speech'
+
 export interface Overview {
   learners: Record<string, number>
   max_learners: number
@@ -30,6 +33,23 @@ export interface Overview {
   spent_month_usd: number
   live_lessons: number
   requests: number
+  services_month: Partial<Record<Service, number>>
+  allowances: {
+    azure_chars_month: number
+    azure_chars_limit: number
+    letters_today: number
+    letters_day_limit: number
+    letters_month: number
+    letters_month_limit: number
+  }
+  fixed_costs: { name: string; usd_month: number | null; note?: string }[]
+}
+
+export interface SpendDetail {
+  total_usd: number
+  by_service: Partial<Record<Service, number>>
+  by_learner: { learner_id: string; name: string; email: string; usd: number; calls: number }[]
+  rows: { day: string; learner_id: string; name: string; email: string; service: Service; usd: number; calls: number }[]
 }
 
 export interface Learner {
@@ -104,7 +124,12 @@ export interface SpendDay {
   day: string
   usd: number
   calls: number
+  by_service: Partial<Record<Service, number>>
 }
+
+export interface SpendFilter { days?: number; learner?: string; service?: Service }
+const query = (f: SpendFilter) =>
+  new URLSearchParams(Object.entries(f).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)])).toString()
 
 export const api = {
   overview: () => call<Overview>('GET', '/overview'),
@@ -117,6 +142,7 @@ export const api = {
   sendInvite: (code: string) => call<Code>('POST', `/codes/${code}/send`),
   requests: () => call<AccessRequest[]>('GET', '/requests'),
   dismissRequest: (id: number) => call<{ ok: true }>('DELETE', `/requests/${id}`),
-  spend: (days = 30) => call<SpendDay[]>('GET', `/spend?days=${days}`),
+  spend: (f: SpendFilter = {}) => call<SpendDay[]>('GET', `/spend?${query({ days: 30, ...f })}`),
+  spendDetail: (f: SpendFilter = {}) => call<SpendDetail>('GET', `/spend/detail?${query({ days: 30, ...f })}`),
   alerts: () => call<SpendAlert[]>('GET', '/alerts'),
 }

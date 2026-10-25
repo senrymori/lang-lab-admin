@@ -69,7 +69,7 @@ export function Learners({ onAuthError }: { onAuthError: () => void }) {
     <More label={`Ещё действия: ${l.name || l.email}`} items={[
       { label: 'Изменить число уроков', onClick: () => setOpen({ id: l.id, mode: 'set' }) },
       { label: 'Заблокировать', onClick: () => change(l, { status: 'blocked' },
-        `Заблокировать ${l.name || l.email}? Его выкинет со всех устройств и остановит текущий урок.`) },
+        `Заблокировать ${l.name || l.email}? Текущий урок остановится, в приложении он увидит бан.`) },
     ]} />
   )
   const panel = (l: Learner) => open?.id === l.id && (

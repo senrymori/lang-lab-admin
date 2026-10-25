@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef } from 'react'
-import { type SpendDay, api } from '../api'
+import { useCallback } from 'react'
+import { type Overview as OverviewData, api } from '../api'
 import lemur from '../assets/lemur-magnifier.webp'
-import { fmtDate, fmtDateTime, fmtDayFull, plural, usd } from '../format'
+import { fmtDateTime, fmtDayFull, plural, usd } from '../format'
+import { ServiceLegend, SpendChart } from '../spend'
 import { useLoad } from '../useLoad'
 
 const MODE: Record<string, string> = { learn: 'урок', placement: 'определение уровня' }
@@ -12,7 +13,7 @@ const VERDICT_MSG: Record<string, string> = { ...VERDICT, spam: 'Заблоки�
 const WEEK = 7 * 24 * 3600 * 1000
 
 export function Overview({ onAuthError }: { onAuthError: () => void }) {
-  const load = useCallback(() => Promise.all([api.overview(), api.spend(30), api.alerts(), api.learners()]), [])
+  const load = useCallback(() => Promise.all([api.overview(), api.spend(), api.alerts(), api.learners()]), [])
   const { data, error } = useLoad(load, onAuthError)
   const today = new Date()
 
@@ -73,7 +74,7 @@ export function Overview({ onAuthError }: { onAuthError: () => void }) {
           <div className="stat">
             <span className="credit">Расход за месяц</span>
             <span className="value">{usd(o.spent_month_usd)}</span>
-            <span className="note">модели репетитора</span>
+            <span className="note">OpenAI и Gemini, без постоянных</span>
           </div>
         </div>,
       )}
@@ -81,8 +82,17 @@ export function Overview({ onAuthError }: { onAuthError: () => void }) {
       <section className="band body ov-body ll-grain" data-theme="light">
         <div className="wrap">
           <div className="ov-section">
-            <SpendChart spend={spend} today={today} />
+            <div className="ov-section-head">
+              <h2>Расход по дням</h2>
+              <span className="credit">30 дней · <a className="more-link" href="#spend">Подробнее →</a></span>
+            </div>
+            {spend.length === 0 ? <p className="quiet">Пока ни одного урока.</p> : <SpendChart spend={spend} today={today} />}
+            <ServiceLegend sums={o.services_month} />
+            <p className="legend-note">Суммы — за этот месяц.</p>
           </div>
+
+          <Allowances a={o.allowances} />
+          <FixedCosts costs={o.fixed_costs} />
 
           <div className="ov-section">
             <div className="ov-section-head">
@@ -128,51 +138,53 @@ export function Overview({ onAuthError }: { onAuthError: () => void }) {
   )
 }
 
-const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-
-/** 30 bars, a day each — days without a lesson stay empty, today is the amber one. */
-function SpendChart({ spend, today }: { spend: SpendDay[]; today: Date }) {
-  const byDay = new Map(spend.map((d) => [d.day.slice(0, 10), d]))
-  const days = Array.from({ length: 30 }, (_, i) => {
-    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 29 + i)
-    const got = byDay.get(dayKey(d))
-    return { date: d, usd: got?.usd ?? 0, calls: got?.calls ?? 0 }
-  })
-  const top = days.reduce((a, d) => (d.usd > a.usd ? d : a), days[0])
-  const peak = Math.max(0.01, top.usd)
-  const now = days[days.length - 1]
-  // on a narrow screen the chart scrolls: start at today's end
-  const scroller = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const el = scroller.current
-    if (el) el.scrollLeft = el.scrollWidth
-  }, [])
+/** Free allowances: they cost nothing until they run out, and then something gets worse (Azure's voices fall back to
+ * the local ones) or stops (Resend's letters). */
+function Allowances({ a }: { a: OverviewData['allowances'] }) {
+  const n = (x: number) => x.toLocaleString('ru-RU')
+  const rows = [
+    { name: 'Голоса Azure', sub: 'символов за месяц; сверх лимита лемур говорит местными голосами', used: a.azure_chars_month, limit: a.azure_chars_limit },
+    { name: 'Письма Resend', sub: 'за сегодня', used: a.letters_today, limit: a.letters_day_limit },
+    { name: 'Письма Resend', sub: 'за месяц', used: a.letters_month, limit: a.letters_month_limit },
+  ]
   return (
-    <>
-      <div className="ov-section-head">
-        <h2>Расход по дням</h2>
-        <span className="credit">30 дней{top.usd > 0 && ` · пик ${usd(top.usd)} · ${fmtDate(top.date)}`}</span>
+    <div className="ov-section">
+      <div className="ov-section-head"><h2>Бесплатные лимиты</h2></div>
+      <div className="allow">
+        {rows.map((r, i) => {
+          const share = Math.min(1, r.used / Math.max(1, r.limit))
+          return (
+            <div key={i} className={`allow-row${share >= 0.8 ? ' hot' : ''}`}>
+              <div><div className="name">{r.name}</div><div className="sub">{r.sub}</div></div>
+              <div className="meter" role="img" aria-label={`${n(r.used)} из ${n(r.limit)}`}><i style={{ width: `${share * 100}%` }} /></div>
+              <div className="num">{n(r.used)} <span className="sub">из {n(r.limit)}</span></div>
+            </div>
+          )
+        })}
       </div>
-      {spend.length === 0 ? (
-        <p className="quiet">Пока ни одного урока.</p>
-      ) : (
-        <div className="chart" ref={scroller}>
-          <div className="bars">
-            {days.map((d, i) => (
-              <div key={i} className={`bar${i === days.length - 1 ? ' today' : ''}`}
-                title={`${fmtDate(d.date)}: ${usd(d.usd)}${d.calls ? `, вызовов ${d.calls}` : ''}`}>
-                <i style={{ height: `${(d.usd / peak) * 100}%`, minHeight: d.usd > 0 ? 2 : 0 }} />
-              </div>
-            ))}
-            <span className="bars-today" style={{ bottom: `calc(${(now.usd / peak) * 100}% + 12px)` }}>Сегодня {usd(now.usd)}</span>
-          </div>
-          <div className="days">
-            {days.map((d, i) => (
-              <span key={i}>{d.date.getDate() % 5 === 0 || i === days.length - 1 ? d.date.getDate() : ''}</span>
-            ))}
-          </div>
-        </div>
-      )}
-    </>
+    </div>
+  )
+}
+
+/** What Language Lab costs every month whatever the lessons: a reminder, not part of the spend above. */
+function FixedCosts({ costs }: { costs: OverviewData['fixed_costs'] }) {
+  const known = costs.filter((c) => c.usd_month != null).reduce((s, c) => s + (c.usd_month ?? 0), 0)
+  return (
+    <div className="ov-section">
+      <div className="ov-section-head">
+        <h2>Постоянные расходы</h2>
+        <span className="credit">{usd(known)} в месяц · в расход выше не входят</span>
+      </div>
+      <table className="adm-table ov-table">
+        <tbody>
+          {costs.map((c) => (
+            <tr key={c.name}>
+              <td><div className="name">{c.name}</div>{c.note && <div className="sub">{c.note}</div>}</td>
+              <td className="num">{c.usd_month != null ? `${usd(c.usd_month)} / мес` : <span className="sub">сумма не указана</span>}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
