@@ -48,20 +48,24 @@ export function Setups({ onAuthError }: { onAuthError: () => void }) {
               <Counts rows={HOW.map(([key, title]) => ({ key, title, n: d.how[key] ?? 0 }))} of={d.total} />
               <h2 className="h2">Что подтянуть <span className="sub">— из {custom} {plural(custom, ['урока', 'уроков', 'уроков'])}, настроенных вручную</span></h2>
               <Counts rows={d.focus} of={custom} />
-              <h2 className="h2">О чём поговорить</h2>
+              <h2 className="h2">О чём поговорить <span className="sub">— можно выбрать несколько</span></h2>
               <Counts rows={d.topics} of={custom} />
+              <h2 className="h2">Темы учеников <span className="sub">— у скольких учеников тема в их наборе</span></h2>
+              {d.pools.length === 0 ? <p className="quiet">Лемур ещё не завёл ни одной темы.</p>
+                : <Counts rows={d.pools} of={Math.max(...d.pools.map((p) => p.n))} />}
               <h2 className="h2">Своими словами <span className="sub">— чего не хватает в карточках</span></h2>
               {d.own.length === 0 ? <p className="quiet">Своими словами пока не писали.</p> : (
                 <div className="table-wrap">
                   <table className="adm-table" style={{ minWidth: 760 }}>
-                    <colgroup><col style={{ width: 240 }} /><col style={{ width: 170 }} /><col /><col style={{ width: 150 }} /></colgroup>
-                    <thead><tr><th>Ученик</th><th>Что</th><th>Написал</th><th>Когда</th></tr></thead>
+                    <colgroup><col style={{ width: 240 }} /><col style={{ width: 170 }} /><col /><col style={{ width: 170 }} /><col style={{ width: 150 }} /></colgroup>
+                    <thead><tr><th>Ученик</th><th>Что</th><th>Написал</th><th>Лемур привязал к теме</th><th>Когда</th></tr></thead>
                     <tbody>
                       {d.own.map((o) => (
                         <tr key={o.learner_id + o.ts + o.what}>
                           <td><div className="name">{o.name || '—'}</div><div className="sub">{o.email} · {LANG[o.lang] ?? o.lang}</div></td>
-                          <td>{o.what}{o.topic && <div className="sub">{o.topic}</div>}</td>
+                          <td>{o.what}</td>
                           <td>{o.text}</td>
+                          <td>{o.topic || <span className="sub">—</span>}</td>
                           <td className="sub">{fmtDateTime(o.ts)}</td>
                         </tr>
                       ))}

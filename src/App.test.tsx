@@ -248,10 +248,12 @@ describe('setups', () => {
     location.hash = '#setups'
     serve({ 'GET /setups': { total: 4, how: { custom: 2, lemur: 1, last: 1 },
       focus: [{ key: 'grammar', title: 'Грамматика', n: 1 }], topics: [{ key: 'games', title: 'Игры', n: 1 }],
-      own: [{ learner_id: 'u1', name: 'Тимур', email: 't@example.com', lang: 'en', ts: '2026-10-25T10:00:00Z', what: 'Конкретно', text: 'Dota 2', topic: 'Игры' }] } })
+      pools: [{ key: 'бизнес', title: 'Бизнес', n: 2 }],
+      own: [{ learner_id: 'u1', name: 'Тимур', email: 't@example.com', lang: 'en', ts: '2026-10-25T10:00:00Z', what: 'Своя тема', text: 'я бизнесмен', topic: 'Бизнес' }] } })
     render(<App />)
     expect(await screen.findByText('4 урока с настройкой')).toBeInTheDocument()
     expect(screen.getByText('На усмотрение лемура')).toBeInTheDocument()
-    expect(screen.getByText('Dota 2')).toBeInTheDocument()
+    expect(screen.getByText('я бизнесмен')).toBeInTheDocument()
+    expect(screen.getAllByText('Бизнес').length).toBe(2)  // a learners' topic, and where their words went
   })
 })

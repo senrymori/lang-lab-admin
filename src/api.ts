@@ -185,5 +185,7 @@ export interface Setups {
   how: Record<'custom' | 'lemur' | 'last', number>
   focus: { key: string; title: string; n: number }[]
   topics: { key: string; title: string; n: number }[]
+  /** how many learners have each topic in their pool (the lemur links what they say to one topic) */
+  pools: { key: string; title: string; n: number }[]
   own: { learner_id: string; name: string; email: string; lang: string; ts: string; what: string; text: string; topic: string }[]
 }
