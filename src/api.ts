@@ -42,7 +42,7 @@ export interface Overview {
     letters_month: number
     letters_month_limit: number
   }
-  fixed_costs: { name: string; usd_month: number | null; note?: string }[]
+  fixed_costs: { name: string; usd_month: number | null; note?: string; until?: string | null }[]
 }
 
 export interface SpendDetail {

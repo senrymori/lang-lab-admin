@@ -180,6 +180,7 @@ function FixedCosts({ costs }: { costs: OverviewData['fixed_costs'] }) {
           {costs.map((c) => (
             <tr key={c.name}>
               <td><div className="name">{c.name}</div>{c.note && <div className="sub">{c.note}</div>}</td>
+              <td className="num sub">{c.until ? `до ${fmtDayFull(new Date(c.until))}` : ''}</td>
               <td className="num">{c.usd_month != null ? `${usd(c.usd_month)} / мес` : <span className="sub">сумма не указана</span>}</td>
             </tr>
           ))}
