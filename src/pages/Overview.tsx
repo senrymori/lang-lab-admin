@@ -166,7 +166,7 @@ function Allowances({ a }: { a: OverviewData['allowances'] }) {
   )
 }
 
-/** What Language Lab costs every month whatever the lessons: a reminder, not part of the spend above. */
+/** What LangLab costs every month whatever the lessons: a reminder, not part of the spend above. */
 function FixedCosts({ costs }: { costs: OverviewData['fixed_costs'] }) {
   const known = costs.filter((c) => c.usd_month != null).reduce((s, c) => s + (c.usd_month ?? 0), 0)
   return (
