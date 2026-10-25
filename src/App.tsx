@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ApiError, api, getKey, setKey } from './api'
 import lemur from './assets/lemur-headphones-upside-down.webp'
 import { Codes } from './pages/Codes'
@@ -13,6 +13,43 @@ import { Mark } from './ui'
 
 const TABS = { overview: 'Обзор', spend: 'Расходы', requests: 'Заявки', learners: 'Ученики', languages: 'Языки', feedback: 'Отзывы', setups: 'Настройки уроков', codes: 'Коды доступа' } as const
 type Tab = keyof typeof TABS
+/** The header: a tab of its own, or a group that opens a list of its tabs (too many to stand in a row). */
+const NAV: (Tab | { title: string; tabs: Tab[] })[] = [
+  'overview',
+  { title: 'Люди', tabs: ['learners', 'requests', 'codes'] },
+  { title: 'Обучение', tabs: ['languages', 'feedback', 'setups'] },
+  'spend',
+]
+
+/** A group in the header: its name (marked when one of its tabs is open) opens the list of its tabs. */
+function NavGroup({ title, tabs, tab }: { title: string; tabs: Tab[]; tab: Tab }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const away = (e: MouseEvent | KeyboardEvent) => {
+      if (e instanceof KeyboardEvent ? e.key === 'Escape' : !ref.current?.contains(e.target as Node)) setOpen(false)
+    }
+    addEventListener('mousedown', away)
+    addEventListener('keydown', away)
+    return () => { removeEventListener('mousedown', away); removeEventListener('keydown', away) }
+  }, [open])
+  const here = tabs.includes(tab)
+  return (
+    <div className="nav-group" ref={ref}>
+      <button type="button" className={`nav-group-name${here ? ' here' : ''}`} aria-expanded={open} aria-haspopup="menu" onClick={() => setOpen(!open)}>
+        {title}{here && <span className="nav-group-tab"> · {TABS[tab]}</span>} <span aria-hidden="true">▾</span>
+      </button>
+      {open && (
+        <div className="nav-menu" role="menu">
+          {tabs.map((t) => (
+            <a key={t} role="menuitem" href={`#${t}`} aria-current={t === tab ? 'page' : undefined} onClick={() => setOpen(false)}>{TABS[t]}</a>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 const tabFromHash = (): Tab => {
   const t = location.hash.slice(1)
@@ -42,9 +79,9 @@ export function App() {
           <nav className="ll-nav">
             <Mark />
             <div className="ll-nav-links">
-              {(Object.keys(TABS) as Tab[]).map((t) => (
-                <a key={t} href={`#${t}`} aria-current={t === tab ? 'page' : undefined}>{TABS[t]}</a>
-              ))}
+              {NAV.map((n) => (typeof n === 'string'
+                ? <a key={n} href={`#${n}`} aria-current={n === tab ? 'page' : undefined}>{TABS[n]}</a>
+                : <NavGroup key={n.title} title={n.title} tabs={n.tabs} tab={tab} />))}
             </div>
           </nav>
           <button className="logout" type="button" onClick={signOut}>Выйти</button>

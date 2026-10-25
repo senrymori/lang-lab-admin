@@ -284,3 +284,20 @@ describe('languages', () => {
     expect(calls.some((c) => c.path === '/setups?lang=kk')).toBe(true)
   })
 })
+
+describe('header', () => {
+  it('groups the tabs: a group names the tab open in it and opens a list of its tabs', async () => {
+    localStorage.setItem('langlab-admin-key', 'k')
+    location.hash = '#learners'
+    serve({ 'GET /learners': [learner()], 'GET /overview': overview, 'GET /requests': [] })
+    render(<App />)
+    const people = await screen.findByRole('button', { name: /Люди/ })
+    expect(people).toHaveTextContent('Люди · Ученики')  // the group names the tab open in it
+    expect(screen.queryByRole('menuitem', { name: 'Заявки' })).not.toBeInTheDocument()
+    await userEvent.click(people)
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Заявки' }))
+    await waitFor(() => expect(location.hash).toBe('#requests'))
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.getByRole('button', { name: /Люди/ })).toHaveTextContent('Люди · Заявки'))
+  })
+})

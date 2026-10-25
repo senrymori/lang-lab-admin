@@ -97,6 +97,19 @@ button:disabled { opacity: .45; cursor: default; }
 .ll-nav-links { display: flex; gap: 24px; margin-left: auto; }
 .ll-nav-links a { font: 600 15px/20px var(--font-text); color: var(--ink-soft); text-decoration: none; }
 .ll-nav-links a:hover, .ll-nav-links a[aria-current] { color: var(--ink); }
+/* the header above the bands after it: each band isolates its grain, so a list opened from the header would go under
+   the next band otherwise */
+.frame > header { z-index: 60; }
+/* a group of tabs in the header: its name, marked (with the open tab) when one of them is open; its list below */
+.nav-group { position: relative; }
+.nav-group-name { background: none; border: 0; padding: 0; font: 600 15px/20px var(--font-text); color: var(--ink-soft); cursor: pointer; white-space: nowrap; }
+.nav-group-name:hover, .nav-group-name.here, .nav-group-name[aria-expanded="true"] { color: var(--ink); }
+.nav-group-tab { font-weight: 400; }
+.nav-menu { position: absolute; top: calc(100% + 12px); left: -14px; z-index: 40; min-width: 200px; display: flex; flex-direction: column;
+  padding: 6px; background: var(--paper-2); border-radius: 2px; box-shadow: 0 24px 48px -24px #300a1066; }
+.ll-nav-links .nav-menu a { padding: 10px 12px; border-radius: 2px; white-space: nowrap; }
+.ll-nav-links .nav-menu a:hover { background: var(--paper); }
+.ll-nav-links .nav-menu a[aria-current] { background: var(--paper); color: var(--ink); }
 .logout { font: 600 15px/20px var(--font-text); color: var(--ink-soft); background: none; border: 0; padding: 16px var(--gutter) 16px 0; }
 .logout:hover { color: var(--ink); }
 @media (max-width: 760px) {
